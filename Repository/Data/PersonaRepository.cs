@@ -1,54 +1,87 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Dapper;
 using System.Data;
+using Dapper;
+using Microsoft.Extensions.Configuration;
 
 namespace Repository.Data
 {
     public class PersonaRepository : IPersona
     {
-        private IDbConnection conexionDB;
-        public PersonaRepository(string _connectionString)
+        private readonly IDbConnection conexionDB;
+
+        public PersonaRepository(IConfiguration configuration)
         {
-            conexionDB = new DbConection(_connectionString).dbConnection();
+            string connectionString = configuration.GetConnectionString("DefaultConnection");
+            conexionDB = new DbConection(connectionString).CreateConnection();
         }
+
         public bool add(PersonaModel persona)
         {
             try
             {
-                if(conexionDB.Execute("Insert into Persona(nombre, apellido, cedula) values(@nombre, @apellido, @cedula)", persona) > 0)
-                    return true;
-                else
-                    return false;
+                var sql = "INSERT INTO DatosPersonas(nombre, apellido, cedula) VALUES (@Nombre, @Apellido, @Cedula)";
+                var affectedRows = conexionDB.Execute(sql, persona);
+                return affectedRows > 0;
             }
             catch (Exception ex)
             {
+                throw ex;
+            }
+        }
 
+        public bool remove(PersonaModel persona)
+        {
+            try
+            {
+                var sql = "DELETE FROM DatosPersonas WHERE id = @Id";
+                var affectedRows = conexionDB.Execute(sql, new { Id = persona.Id });
+                return affectedRows > 0;
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+        }
+
+        public bool update(PersonaModel persona)
+        {
+            try
+            {
+                var sql = "UPDATE DatosPersonas SET nombre = @Nombre, apellido = @Apellido, cedula = @Cedula WHERE id = @Id";
+                var affectedRows = conexionDB.Execute(sql, persona);
+                return affectedRows > 0;
+            }
+            catch (Exception ex)
+            {
                 throw ex;
             }
         }
 
         public PersonaModel get(int id)
         {
-            throw new NotImplementedException();
+            try
+            {
+                var sql = "SELECT * FROM DatosPersonas WHERE id = @Id";
+                return conexionDB.QueryFirstOrDefault<PersonaModel>(sql, new { Id = id });
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         public IEnumerable<PersonaModel> list()
         {
-            throw new NotImplementedException();
-        }
-
-        public bool remove(PersonaModel persona)
-        {
-            throw new NotImplementedException();
-        }
-
-        public bool update(PersonaModel persona)
-        {
-            throw new NotImplementedException();
+            try
+            {
+                var sql = "SELECT * FROM DatosPersonas";
+                return conexionDB.Query<PersonaModel>(sql);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
     }
 }
